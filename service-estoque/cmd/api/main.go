@@ -1,15 +1,53 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"log"
+	"os"
 
+	_ "Korp_Teste_VictorPizzarro/service-estoque/docs"
+	"Korp_Teste_VictorPizzarro/service-estoque/internal/handler"
+	"Korp_Teste_VictorPizzarro/service-estoque/internal/infrastructure"
+	"Korp_Teste_VictorPizzarro/service-estoque/internal/repository"
+	"Korp_Teste_VictorPizzarro/service-estoque/internal/service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+)
+
+// @title           Service Estoque API
+// @version         1.0
+// @description     Microsserviço de controle de estoque para o teste Korp.
+// @host            localhost:8081
+// @BasePath        /api/v1
 func main() {
 
-	router := gin.Default()
+	if err := godotenv.Load(); err != nil {
+		log.Println("Aviso: arquivo .env não encontrado. Lendo variáveis do sistema.")
+	}
 
-	router.GET("/healthy", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"success": true,
-		})
-	})
-	router.Run(":8081")
+	db, err := infrastructure.ConectarBanco()
+	if err != nil {
+		log.Fatalf("Falha ao conectar no banco de dados: %v", err)
+	}
+
+	err = db.AutoMigrate(&repository.ProdutoDB{})
+	if err != nil {
+		log.Fatalf("Falha ao rodar migrations: %v", err)
+	}
+
+	repo := repository.NewProdutoRepository(db)
+	produtoService := service.NewCadastrarProdutoService(repo)
+	produtoHandler := handler.NewProdutoHandler(produtoService)
+	router := gin.Default()
+	ConfigurarRotas(router, produtoHandler)
+
+	apiPort := os.Getenv("API_PORT")
+	if apiPort == "" {
+		apiPort = "8081"
+	}
+
+	log.Printf("Serviço de Estoque (API) rodando na porta %s...", apiPort)
+	if err := router.Run(":" + apiPort); err != nil {
+		log.Fatalf("Falha ao iniciar o servidor: %v", err)
+	}
 }

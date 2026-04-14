@@ -1,0 +1,71 @@
+basePath: /api/v1
+definitions:
+  handler.ProdutoRequest:
+    properties:
+      codigo:
+        type: string
+      descricao:
+        type: string
+      saldo:
+        type: integer
+    required:
+    - codigo
+    - descricao
+    type: object
+  handler.ProdutoResponse:
+    properties:
+      codigo:
+        type: string
+      descricao:
+        type: string
+      mensagem:
+        type: string
+      saldo:
+        type: integer
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: Microsserviço de controle de estoque para o teste Korp.
+  title: Service Estoque API
+  version: "1.0"
+paths:
+  /produtos:
+    post:
+      consumes:
+      - application/json
+      description: Cria um produto no banco de dados com código, descrição e saldo
+        inicial
+      parameters:
+      - description: Dados do Produto
+        in: body
+        name: produto
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ProdutoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ProdutoResponse'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.ProdutoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - produtos
+swagger: "2.0"
