@@ -1,1 +1,30 @@
+### =======================================
+### KORP - TESTE DE ESTOQUE
+### =======================================
+
+### 1. Health Check (Verifica se a API está viva)
 GET http://localhost:8081/healthy
+Accept: application/json
+
+
+
+### 2. Cadastrar Produto com Sucesso
+POST http://localhost:8081/api/v1/produtos
+Content-Type: application/json
+
+{
+  "codigo": "KORP-001",
+  "descricao": "Monitor Gamer 24p",
+  "saldo": 10
+}
+
+
+
+### 3. Tentar Cadastrar Produto Sem Código (Validação/400 Bad Request)
+POST http://localhost:8081/api/v1/produtos
+Content-Type: application/json
+
+{
+  "descricao": "Mouse Sem Fio",
+  "saldo": 5
+}
