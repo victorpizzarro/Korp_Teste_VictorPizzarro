@@ -10,3 +10,8 @@ tmp/
 .vscode/
 .idea/
 go.work.sum
+
+.DS_Store
+Thumbs.db
+
+.env
