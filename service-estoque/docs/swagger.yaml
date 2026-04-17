@@ -1,6 +1,13 @@
 basePath: /api/v1
 definitions:
-  handler.ProdutoRequest:
+  internal_handler.DebitarRequest:
+    properties:
+      quantidade:
+        type: integer
+    required:
+    - quantidade
+    type: object
+  internal_handler.ProdutoRequest:
     properties:
       codigo:
         type: string
@@ -12,7 +19,7 @@ definitions:
     - codigo
     - descricao
     type: object
-  handler.ProdutoResponse:
+  internal_handler.ProdutoResponse:
     properties:
       codigo:
         type: string
@@ -42,18 +49,58 @@ paths:
         name: produto
         required: true
         schema:
-          $ref: '#/definitions/handler.ProdutoRequest'
+          $ref: '#/definitions/internal_handler.ProdutoRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.ProdutoResponse'
+            $ref: '#/definitions/internal_handler.ProdutoResponse'
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handler.ProdutoResponse'
+            $ref: '#/definitions/internal_handler.ProdutoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - produtos
+  /produtos/{codigo}/debitar:
+    post:
+      consumes:
+      - application/json
+      description: Debita a quantidade de um produto no estoque
+      parameters:
+      - description: Código do Produto
+        in: path
+        name: codigo
+        required: true
+        type: string
+      - description: Quantidade a debitar
+        in: body
+        name: quantidade
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.DebitarRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "400":
           description: Bad Request
           schema:

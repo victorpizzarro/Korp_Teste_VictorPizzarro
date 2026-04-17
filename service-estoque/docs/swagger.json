@@ -28,7 +28,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.ProdutoRequest"
+                            "$ref": "#/definitions/internal_handler.ProdutoRequest"
                         }
                     }
                 ],
@@ -36,13 +36,74 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.ProdutoResponse"
+                            "$ref": "#/definitions/internal_handler.ProdutoResponse"
                         }
                     },
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/handler.ProdutoResponse"
+                            "$ref": "#/definitions/internal_handler.ProdutoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/produtos/{codigo}/debitar": {
+            "post": {
+                "description": "Debita a quantidade de um produto no estoque",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "produtos"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Código do Produto",
+                        "name": "codigo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Quantidade a debitar",
+                        "name": "quantidade",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.DebitarRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
@@ -68,7 +129,18 @@
         }
     },
     "definitions": {
-        "handler.ProdutoRequest": {
+        "internal_handler.DebitarRequest": {
+            "type": "object",
+            "required": [
+                "quantidade"
+            ],
+            "properties": {
+                "quantidade": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.ProdutoRequest": {
             "type": "object",
             "required": [
                 "codigo",
@@ -86,7 +158,7 @@
                 }
             }
         },
-        "handler.ProdutoResponse": {
+        "internal_handler.ProdutoResponse": {
             "type": "object",
             "properties": {
                 "codigo": {
