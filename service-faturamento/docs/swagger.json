@@ -1,0 +1,180 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Microsserviço de faturamento e emissão de notas para o teste Korp.",
+        "title": "Service Faturamento API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8082",
+    "basePath": "/api/v1",
+    "paths": {
+        "/notas-fiscais": {
+            "post": {
+                "description": "Cria uma nota fiscal no banco de dados com numeração sequencial e itens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notas-fiscais"
+                ],
+                "summary": "Cadastrar Nota Fiscal",
+                "parameters": [
+                    {
+                        "description": "Dados da Nota Fiscal",
+                        "name": "nota",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.NotaFiscalDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.NotaFiscalResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notas-fiscais/{numero}/imprimir": {
+            "post": {
+                "description": "Fecha a nota fiscal e debita o saldo no serviço de estoque",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notas-fiscais"
+                ],
+                "summary": "Imprimir Nota Fiscal",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Número da Nota Fiscal",
+                        "name": "numero",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.NotaFiscalResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "internal_handler.ItemDTO": {
+            "type": "object",
+            "required": [
+                "codigoProduto",
+                "quantidade"
+            ],
+            "properties": {
+                "codigoProduto": {
+                    "type": "string"
+                },
+                "quantidade": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.ItemResponse": {
+            "type": "object",
+            "properties": {
+                "codigoProduto": {
+                    "type": "string"
+                },
+                "quantidade": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.NotaFiscalDTO": {
+            "type": "object",
+            "required": [
+                "itens"
+            ],
+            "properties": {
+                "itens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler.ItemDTO"
+                    }
+                }
+            }
+        },
+        "internal_handler.NotaFiscalResponse": {
+            "type": "object",
+            "properties": {
+                "dataCriacao": {
+                    "type": "string"
+                },
+                "itens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler.ItemResponse"
+                    }
+                },
+                "mensagem": {
+                    "type": "string"
+                },
+                "numeroSequencial": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

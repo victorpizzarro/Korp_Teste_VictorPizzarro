@@ -1,0 +1,119 @@
+basePath: /api/v1
+definitions:
+  internal_handler.ItemDTO:
+    properties:
+      codigoProduto:
+        type: string
+      quantidade:
+        type: integer
+    required:
+    - codigoProduto
+    - quantidade
+    type: object
+  internal_handler.ItemResponse:
+    properties:
+      codigoProduto:
+        type: string
+      quantidade:
+        type: integer
+    type: object
+  internal_handler.NotaFiscalDTO:
+    properties:
+      itens:
+        items:
+          $ref: '#/definitions/internal_handler.ItemDTO'
+        type: array
+    required:
+    - itens
+    type: object
+  internal_handler.NotaFiscalResponse:
+    properties:
+      dataCriacao:
+        type: string
+      itens:
+        items:
+          $ref: '#/definitions/internal_handler.ItemResponse'
+        type: array
+      mensagem:
+        type: string
+      numeroSequencial:
+        type: integer
+      status:
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact: {}
+  description: Microsserviço de faturamento e emissão de notas para o teste Korp.
+  title: Service Faturamento API
+  version: "1.0"
+paths:
+  /notas-fiscais:
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nota fiscal no banco de dados com numeração sequencial
+        e itens
+      parameters:
+      - description: Dados da Nota Fiscal
+        in: body
+        name: nota
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.NotaFiscalDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_handler.NotaFiscalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cadastrar Nota Fiscal
+      tags:
+      - notas-fiscais
+  /notas-fiscais/{numero}/imprimir:
+    post:
+      consumes:
+      - application/json
+      description: Fecha a nota fiscal e debita o saldo no serviço de estoque
+      parameters:
+      - description: Número da Nota Fiscal
+        in: path
+        name: numero
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.NotaFiscalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Imprimir Nota Fiscal
+      tags:
+      - notas-fiscais
+swagger: "2.0"
