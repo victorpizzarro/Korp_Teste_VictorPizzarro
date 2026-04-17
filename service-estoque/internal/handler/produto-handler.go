@@ -2,6 +2,7 @@ package handler
 
 import (
 	"Korp_Teste_VictorPizzarro/service-estoque/internal/domain"
+	"Korp_Teste_VictorPizzarro/service-estoque/internal/repository"
 	"Korp_Teste_VictorPizzarro/service-estoque/internal/service"
 	"net/http"
 
@@ -21,6 +22,17 @@ type ProdutoResponse struct {
 	Mensagem  string `json:"mensagem,omitempty"`
 }
 
+type DebitarRequest struct {
+	Quantidade int `json:"quantidade" binding:"required,gt=0"`
+}
+
+type LoteDebitoRequest struct {
+	Itens []struct {
+		CodigoProduto string `json:"codigoProduto" binding:"required"`
+		Quantidade    int    `json:"quantidade" binding:"required,gt=0"`
+	} `json:"itens" binding:"required,dive"`
+}
+
 func NewProdutoResponse(produto *domain.Produto) ProdutoResponse {
 	return ProdutoResponse{
 		Codigo:    produto.Codigo(),
@@ -30,11 +42,15 @@ func NewProdutoResponse(produto *domain.Produto) ProdutoResponse {
 }
 
 type ProdutoHandler struct {
-	service *service.CadastrarProdutoService
+	service        *service.CadastrarProdutoService
+	debitarService *service.DebitarEstoqueService
 }
 
-func NewProdutoHandler(service *service.CadastrarProdutoService) *ProdutoHandler {
-	return &ProdutoHandler{service: service}
+func NewProdutoHandler(service *service.CadastrarProdutoService, debitarService *service.DebitarEstoqueService) *ProdutoHandler {
+	return &ProdutoHandler{
+		service:        service,
+		debitarService: debitarService,
+	}
 }
 
 // @Description  Cria um produto no banco de dados com código, descrição e saldo inicial
@@ -76,4 +92,65 @@ func (h *ProdutoHandler) Cadastrar(c *gin.Context) {
 
 	response.Mensagem = "Produto já está cadastrado"
 	c.JSON(http.StatusOK, response)
+}
+
+// @Description  Debita a quantidade de um produto no estoque individualmente
+// @Tags         produtos
+// @Accept       json
+// @Produce      json
+// @Param        codigo      path      string                  true  "Código do Produto"
+// @Param        quantidade  body      handler.DebitarRequest  true  "Quantidade a debitar"
+// @Success      200         {object}  map[string]string
+// @Failure      400         {object}  map[string]string
+// @Failure      422         {object}  map[string]string
+// @Router       /produtos/{codigo}/debitar [post]
+func (h *ProdutoHandler) Debitar(c *gin.Context) {
+	codigo := c.Param("codigo")
+
+	var request DebitarRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"erro": "Quantidade inválida"})
+		return
+	}
+
+	err := h.debitarService.Executar(codigo, request.Quantidade)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"erro": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"mensagem": "Estoque debitado com sucesso"})
+}
+
+// @Summary Debitar estoque em lote
+// @Tags Produtos
+// @Accept json
+// @Produce json
+// @Param request body LoteDebitoRequest true "Itens para débito"
+// @Success 204 "Débito realizado com sucesso"
+// @Failure 400,422,500 {object} map[string]string
+// @Router /produtos/debitar-lote [post]
+func (h *ProdutoHandler) DebitarLote(c *gin.Context) {
+	var req LoteDebitoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"erro": "payload inválido"})
+		return
+	}
+
+	var itensParaDebito []repository.ItemDebito
+
+	for _, item := range req.Itens {
+		itensParaDebito = append(itensParaDebito, repository.ItemDebito{
+			Codigo:     item.CodigoProduto,
+			Quantidade: item.Quantidade,
+		})
+	}
+
+	err := h.debitarService.ExecutarLote(itensParaDebito)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"erro": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

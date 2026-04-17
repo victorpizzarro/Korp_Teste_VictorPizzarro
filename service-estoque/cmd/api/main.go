@@ -36,8 +36,12 @@ func main() {
 	}
 
 	repo := repository.NewProdutoRepository(db)
-	produtoService := service.NewCadastrarProdutoService(repo)
-	produtoHandler := handler.NewProdutoHandler(produtoService)
+
+	cadastrarService := service.NewCadastrarProdutoService(repo)
+	debitarService := service.NewDebitarEstoqueService(repo)
+
+	produtoHandler := handler.NewProdutoHandler(cadastrarService, debitarService)
+
 	router := gin.Default()
 	ConfigurarRotas(router, produtoHandler)
 

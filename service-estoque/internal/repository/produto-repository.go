@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ProdutoDB struct {
@@ -20,10 +21,18 @@ func (ProdutoDB) TableName() string {
 	return "produtos"
 }
 
+type ItemDebito struct {
+	Codigo     string
+	Quantidade int
+}
+
 type ProdutoRepository interface {
 	SalvarProduto(produto *domain.Produto) error
 	BuscarProdutoPorCodigo(codigo string) (*domain.Produto, error)
 	AtualizarSaldo(produto *domain.Produto) error
+
+	DebitarSaldo(codigo string, quantidade int) error
+	DebitarSaldoLote(itens []ItemDebito) error
 }
 
 type produtoRepositoryPostgres struct {
@@ -36,7 +45,6 @@ func NewProdutoRepository(db *gorm.DB) ProdutoRepository {
 
 func (repository *produtoRepositoryPostgres) SalvarProduto(produto *domain.Produto) error {
 	produtoDB := ProdutoDB{
-
 		Codigo:    produto.Codigo(),
 		Descricao: produto.Descricao(),
 		Saldo:     produto.Saldo(),
@@ -51,11 +59,9 @@ func (repository *produtoRepositoryPostgres) BuscarProdutoPorCodigo(codigo strin
 	err := repository.db.Where("codigo = ?", codigo).First(&produtoDB).Error
 
 	if err != nil {
-
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
-
 		return nil, err
 	}
 
@@ -68,4 +74,54 @@ func (repository *produtoRepositoryPostgres) AtualizarSaldo(produto *domain.Prod
 		Update("saldo", produto.Saldo()).Error
 
 	return err
+}
+
+func (repository *produtoRepositoryPostgres) DebitarSaldo(codigo string, quantidade int) error {
+	return repository.db.Transaction(func(tx *gorm.DB) error {
+		var produtoDB ProdutoDB
+
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("codigo = ?", codigo).
+			First(&produtoDB).Error
+
+		if err != nil {
+			return err
+		}
+
+		if produtoDB.Saldo < quantidade {
+			return errors.New("saldo insuficiente para realizar o débito")
+		}
+
+		produtoDB.Saldo -= quantidade
+
+		return tx.Save(&produtoDB).Error
+	})
+}
+
+func (repository *produtoRepositoryPostgres) DebitarSaldoLote(itens []ItemDebito) error {
+
+	return repository.db.Transaction(func(tx *gorm.DB) error {
+		for _, item := range itens {
+			var produtoDB ProdutoDB
+
+			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+				Where("codigo = ?", item.Codigo).
+				First(&produtoDB).Error
+
+			if err != nil {
+				return err
+			}
+
+			if produtoDB.Saldo < item.Quantidade {
+				return errors.New("saldo insuficiente para o produto: " + item.Codigo)
+			}
+
+			produtoDB.Saldo -= item.Quantidade
+
+			if err := tx.Save(&produtoDB).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }

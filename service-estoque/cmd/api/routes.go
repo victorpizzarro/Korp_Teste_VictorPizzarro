@@ -22,5 +22,7 @@ func ConfigurarRotas(router *gin.Engine, produtoHandler *handler.ProdutoHandler)
 	api := router.Group("/api/v1")
 	{
 		api.POST("/produtos", produtoHandler.Cadastrar)
+		api.POST("/produtos/:codigo/debitar", produtoHandler.Debitar)
+		api.POST("/produtos/debitar-lote", produtoHandler.DebitarLote)
 	}
 }
