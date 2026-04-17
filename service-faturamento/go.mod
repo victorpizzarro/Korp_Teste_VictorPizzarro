@@ -1,4 +1,4 @@
-module Korp_Teste_VictorPizzarro/faturamento
+module Korp_Teste_VictorPizzarro/service-faturamento
 
 go 1.26.2
 
