@@ -2,6 +2,7 @@ package handler
 
 import (
 	"Korp_Teste_VictorPizzarro/service-faturamento/internal/domain"
+	"Korp_Teste_VictorPizzarro/service-faturamento/internal/repository"
 	"Korp_Teste_VictorPizzarro/service-faturamento/internal/service"
 	"net/http"
 	"strconv"
@@ -51,13 +52,41 @@ func NewNotaFiscalResponse(nota *domain.NotaFiscal) NotaFiscalResponse {
 type NotaFiscalHandler struct {
 	cadastrarNotaFiscalService *service.CadastrarNotaFiscalService
 	imprimirNotaFiscalService  *service.ImprimirNotaFiscalService
+	repo                       repository.NotaFiscalRepository
 }
 
-func NewNotaFiscalHandler(cadastrar *service.CadastrarNotaFiscalService, imprimir *service.ImprimirNotaFiscalService) *NotaFiscalHandler {
+func NewNotaFiscalHandler(cadastrar *service.CadastrarNotaFiscalService, imprimir *service.ImprimirNotaFiscalService, repo repository.NotaFiscalRepository) *NotaFiscalHandler {
 	return &NotaFiscalHandler{
 		cadastrarNotaFiscalService: cadastrar,
 		imprimirNotaFiscalService:  imprimir,
+		repo:                       repo,
 	}
+}
+
+// @Summary      Listar Notas Fiscais
+// @Description  Retorna todas as notas fiscais cadastradas com seus itens
+// @Tags         notas-fiscais
+// @Produce      json
+// @Success      200  {array}   handler.NotaFiscalResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /notas-fiscais [get]
+func (handler *NotaFiscalHandler) Listar(context *gin.Context) {
+	notas, err := handler.repo.ListarTodas()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"erro": "Falha ao listar notas fiscais"})
+		return
+	}
+
+	var response []NotaFiscalResponse
+	for _, nota := range notas {
+		response = append(response, NewNotaFiscalResponse(nota))
+	}
+
+	if response == nil {
+		response = []NotaFiscalResponse{}
+	}
+
+	context.JSON(http.StatusOK, response)
 }
 
 // @Summary      Cadastrar Nota Fiscal

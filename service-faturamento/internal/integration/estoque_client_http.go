@@ -61,7 +61,13 @@ func (client *estoqueClientHttp) AbaterEstoqueLote(itens []domain.ItemNotaFiscal
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusNoContent && response.StatusCode != http.StatusOK {
-		return fmt.Errorf("erro no serviço de estoque (Status: %d). Saldo insuficiente ou produto inválido", response.StatusCode)
+		var errResp struct {
+			Erro string `json:"erro"`
+		}
+		if err := json.NewDecoder(response.Body).Decode(&errResp); err == nil && errResp.Erro != "" {
+			return errors.New(errResp.Erro)
+		}
+		return fmt.Errorf("erro no serviço de estoque (Status: %d)", response.StatusCode)
 	}
 
 	return nil

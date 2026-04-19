@@ -1,1 +1,26 @@
+### =======================================
+### KORP - TESTE DE FATURAMENTO
+### =======================================
+
 GET http://localhost:8082/healthy
+
+
+###
+// Cadastrar Nota Fiscal
+POST http://localhost:8082/api/v1/notas-fiscais
+Content-Type: application/json
+
+{
+    "itens": [
+        {
+            "codigoProduto": "PROD-001",
+            "quantidade": 5
+        },
+        {
+            "codigoProduto": "PROD-002",
+            "quantidade": 10
+        }
+    ]
+}
+
+#

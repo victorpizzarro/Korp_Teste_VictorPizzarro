@@ -37,7 +37,7 @@ func main() {
 
 	estoqueURL := os.Getenv("ESTOQUE_URL")
 	if estoqueURL == "" {
-		estoqueURL = "http://localhost:8081"
+		estoqueURL = "http://localhost:8081/api/v1"
 	}
 	estoqueClient := integration.NewEstoqueClientHttp(estoqueURL)
 
@@ -46,7 +46,7 @@ func main() {
 	cadastrarService := service.NewCadastrarNotaFiscalService(repo)
 	imprimirService := service.NewImprimirNotaFiscalService(repo, estoqueClient)
 
-	nfHandler := handler.NewNotaFiscalHandler(cadastrarService, imprimirService)
+	nfHandler := handler.NewNotaFiscalHandler(cadastrarService, imprimirService, repo)
 
 	router := gin.Default()
 	ConfigurarRotas(router, nfHandler)

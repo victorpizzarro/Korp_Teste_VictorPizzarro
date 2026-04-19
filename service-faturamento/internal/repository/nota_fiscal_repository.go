@@ -35,6 +35,7 @@ type NotaFiscalRepository interface {
 	SalvarNotaFiscal(nota *domain.NotaFiscal) error
 	BuscarNotaFiscalPorNumero(numero int) (*domain.NotaFiscal, error)
 	AtualizarStatus(nota *domain.NotaFiscal) error
+	ListarTodas() ([]*domain.NotaFiscal, error)
 }
 
 type notaFiscalRepositoryPostgres struct {
@@ -111,4 +112,37 @@ func (repository *notaFiscalRepositoryPostgres) AtualizarStatus(nota *domain.Not
 		Update("status", string(nota.Status())).Error
 
 	return err
+}
+
+func (repository *notaFiscalRepositoryPostgres) ListarTodas() ([]*domain.NotaFiscal, error) {
+	var notasDB []NotaFiscalDB
+
+	if err := repository.db.Preload("Itens").Order("numero_sequencial DESC").Find(&notasDB).Error; err != nil {
+		return nil, err
+	}
+
+	var notas []*domain.NotaFiscal
+	for _, notaDB := range notasDB {
+		var itensVO []domain.ItemNotaFiscal
+		for _, itemDB := range notaDB.Itens {
+			itemVO, err := domain.NewItemNotaFiscal(itemDB.CodigoProduto, itemDB.Quantidade)
+			if err != nil {
+				return nil, err
+			}
+			itensVO = append(itensVO, *itemVO)
+		}
+
+		nota, err := domain.ReconstituirNotaFiscal(
+			notaDB.NumeroSequencial,
+			domain.StatusNotaFiscal(notaDB.Status),
+			notaDB.CreatedAt,
+			itensVO,
+		)
+		if err != nil {
+			return nil, err
+		}
+		notas = append(notas, nota)
+	}
+
+	return notas, nil
 }
