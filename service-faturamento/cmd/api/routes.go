@@ -32,5 +32,6 @@ func ConfigurarRotas(router *gin.Engine, nfHandler *handler.NotaFiscalHandler) {
 		api.GET("/notas-fiscais", nfHandler.Listar)
 		api.POST("/notas-fiscais", nfHandler.Cadastrar)
 		api.POST("/notas-fiscais/:numero/imprimir", nfHandler.Imprimir)
+		api.POST("/notas-fiscais/:numero/analisar-anomalia", nfHandler.AnalisarAnomalia)
 	}
 }
