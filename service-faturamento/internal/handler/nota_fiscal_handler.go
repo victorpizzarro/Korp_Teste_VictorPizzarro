@@ -52,13 +52,15 @@ func NewNotaFiscalResponse(nota *domain.NotaFiscal) NotaFiscalResponse {
 type NotaFiscalHandler struct {
 	cadastrarNotaFiscalService *service.CadastrarNotaFiscalService
 	imprimirNotaFiscalService  *service.ImprimirNotaFiscalService
+	analisarAnomaliaNFService  *service.AnalisarAnomaliaNFService
 	repo                       repository.NotaFiscalRepository
 }
 
-func NewNotaFiscalHandler(cadastrar *service.CadastrarNotaFiscalService, imprimir *service.ImprimirNotaFiscalService, repo repository.NotaFiscalRepository) *NotaFiscalHandler {
+func NewNotaFiscalHandler(cadastrar *service.CadastrarNotaFiscalService, imprimir *service.ImprimirNotaFiscalService, analisar *service.AnalisarAnomaliaNFService, repo repository.NotaFiscalRepository) *NotaFiscalHandler {
 	return &NotaFiscalHandler{
 		cadastrarNotaFiscalService: cadastrar,
 		imprimirNotaFiscalService:  imprimir,
+		analisarAnomaliaNFService:  analisar,
 		repo:                       repo,
 	}
 }
@@ -151,4 +153,31 @@ func (handler *NotaFiscalHandler) Imprimir(context *gin.Context) {
 	response := NewNotaFiscalResponse(nota)
 	response.Mensagem = "Nota Fiscal impressa e estoque atualizado"
 	context.JSON(http.StatusOK, response)
+}
+
+// @Summary      Analisar Anomalia da Nota Fiscal
+// @Description  Analisa se há alguma anomalia usando IA (Gemini) antes da impressão
+// @Tags         notas-fiscais
+// @Accept       json
+// @Produce      json
+// @Param        numero  path      int  true  "Número da Nota Fiscal"
+// @Success      200     {object}  map[string]interface{}
+// @Failure      400     {object}  map[string]string
+// @Failure      422     {object}  map[string]string
+// @Router       /notas-fiscais/{numero}/analisar-anomalia [post]
+func (handler *NotaFiscalHandler) AnalisarAnomalia(context *gin.Context) {
+	numeroStr := context.Param("numero")
+	numero, err := strconv.Atoi(numeroStr)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"erro": "Número inválido"})
+		return
+	}
+
+	result, err := handler.analisarAnomaliaNFService.Executar(numero)
+	if err != nil {
+		context.JSON(http.StatusUnprocessableEntity, gin.H{"erro": err.Error()})
+		return
+	}
+
+	context.JSON(http.StatusOK, result)
 }

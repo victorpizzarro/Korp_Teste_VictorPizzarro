@@ -45,8 +45,9 @@ func main() {
 
 	cadastrarService := service.NewCadastrarNotaFiscalService(repo)
 	imprimirService := service.NewImprimirNotaFiscalService(repo, estoqueClient)
+	analisarService := service.NewAnalisarAnomaliaNFService(repo)
 
-	nfHandler := handler.NewNotaFiscalHandler(cadastrarService, imprimirService, repo)
+	nfHandler := handler.NewNotaFiscalHandler(cadastrarService, imprimirService, analisarService, repo)
 
 	router := gin.Default()
 	ConfigurarRotas(router, nfHandler)
