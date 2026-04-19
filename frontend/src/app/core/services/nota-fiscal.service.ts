@@ -48,4 +48,14 @@ export class NotaFiscalService {
       })
     );
   }
+
+  analisarAnomalia(numero: number): Observable<{tem_anomalia: boolean, mensagem: string}> {
+    return this.http.post<{tem_anomalia: boolean, mensagem: string}>(`${this.API_URL}/${numero}/analisar-anomalia`, {}).pipe(
+      tap(res => console.log(`[NotaFiscalService] Avaliando anomalia NF ${numero}:`, res)),
+      catchError(err => {
+        console.error(`[NotaFiscalService] Erro ao analisar anomalia:`, err);
+        return throwError(() => err);
+      })
+    );
+  }
 }

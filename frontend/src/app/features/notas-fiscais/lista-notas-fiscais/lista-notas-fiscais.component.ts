@@ -9,7 +9,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { NotaFiscalService, NotaFiscal } from '../../../core/services/nota-fiscal.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 @Component({
   selector: 'app-lista-notas-fiscais',
   standalone: true,
@@ -22,6 +24,7 @@ import { NotaFiscalService, NotaFiscal } from '../../../core/services/nota-fisca
     MatTooltipModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
     LoadingOverlayComponent,
   ],
   template: `
@@ -226,7 +229,8 @@ export class ListaNotasFiscaisComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
   constructor(
     private notaFiscalService: NotaFiscalService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {}
   ngOnInit(): void {
     this.carregarNotas();
@@ -248,6 +252,48 @@ export class ListaNotasFiscaisComponent implements OnInit, OnDestroy {
     this.subscriptions.add(sub);
   }
   imprimirNota(nota: NotaFiscal): void {
+    this.isLoading = true;
+
+    // First check for anomalies via Gemini AI
+    const subAnomalia = this.notaFiscalService.analisarAnomalia(nota.numeroSequencial)
+      .subscribe({
+        next: (resp) => {
+          if (resp.tem_anomalia) {
+            this.isLoading = false;
+            // Ask for confirmation
+            const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+              width: '400px',
+              data: {
+                title: 'Possível Erro de Faturamento',
+                message: resp.mensagem || 'A IA detectou uma possível anomalia nos itens desta nota.'
+              }
+            });
+
+            dialogRef.afterClosed().subscribe(result => {
+              if (result === true) {
+                this.executarImpressao(nota);
+              }
+            });
+          } else {
+            // No anomaly, just print
+            this.executarImpressao(nota);
+          }
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.snackBar.open(
+            'Não foi possível analisar anomalias. Verifique o servidor.',
+            'OK',
+            { duration: 5000, horizontalPosition: 'end', panelClass: ['snack-error'] }
+          );
+          console.error(err);
+        }
+      });
+    
+    this.subscriptions.add(subAnomalia);
+  }
+
+  private executarImpressao(nota: NotaFiscal): void {
     this.isLoading = true;
     const sub = this.notaFiscalService
       .imprimir(nota.numeroSequencial)
