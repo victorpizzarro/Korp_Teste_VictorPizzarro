@@ -40,7 +40,7 @@ func main() {
 	cadastrarService := service.NewCadastrarProdutoService(repo)
 	debitarService := service.NewDebitarEstoqueService(repo)
 
-	produtoHandler := handler.NewProdutoHandler(cadastrarService, debitarService)
+	produtoHandler := handler.NewProdutoHandler(cadastrarService, debitarService, repo)
 
 	router := gin.Default()
 	ConfigurarRotas(router, produtoHandler)

@@ -30,6 +30,7 @@ type ProdutoRepository interface {
 	SalvarProduto(produto *domain.Produto) error
 	BuscarProdutoPorCodigo(codigo string) (*domain.Produto, error)
 	AtualizarSaldo(produto *domain.Produto) error
+	ListarTodos() ([]*domain.Produto, error)
 
 	DebitarSaldo(codigo string, quantidade int) error
 	DebitarSaldoLote(itens []ItemDebito) error
@@ -66,6 +67,25 @@ func (repository *produtoRepositoryPostgres) BuscarProdutoPorCodigo(codigo strin
 	}
 
 	return domain.NewProduto(produtoDB.Codigo, produtoDB.Descricao, produtoDB.Saldo)
+}
+
+func (repository *produtoRepositoryPostgres) ListarTodos() ([]*domain.Produto, error) {
+	var produtosDB []ProdutoDB
+
+	if err := repository.db.Find(&produtosDB).Error; err != nil {
+		return nil, err
+	}
+
+	var produtos []*domain.Produto
+	for _, p := range produtosDB {
+		produto, err := domain.NewProduto(p.Codigo, p.Descricao, p.Saldo)
+		if err != nil {
+			return nil, err
+		}
+		produtos = append(produtos, produto)
+	}
+
+	return produtos, nil
 }
 
 func (repository *produtoRepositoryPostgres) AtualizarSaldo(produto *domain.Produto) error {

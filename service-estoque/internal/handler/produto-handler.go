@@ -44,13 +44,41 @@ func NewProdutoResponse(produto *domain.Produto) ProdutoResponse {
 type ProdutoHandler struct {
 	service        *service.CadastrarProdutoService
 	debitarService *service.DebitarEstoqueService
+	repo           repository.ProdutoRepository
 }
 
-func NewProdutoHandler(service *service.CadastrarProdutoService, debitarService *service.DebitarEstoqueService) *ProdutoHandler {
+func NewProdutoHandler(service *service.CadastrarProdutoService, debitarService *service.DebitarEstoqueService, repo repository.ProdutoRepository) *ProdutoHandler {
 	return &ProdutoHandler{
 		service:        service,
 		debitarService: debitarService,
+		repo:           repo,
 	}
+}
+
+// @Summary      Listar Produtos
+// @Description  Retorna todos os produtos cadastrados com seus saldos
+// @Tags         produtos
+// @Produce      json
+// @Success      200  {array}   handler.ProdutoResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /produtos [get]
+func (h *ProdutoHandler) Listar(c *gin.Context) {
+	produtos, err := h.repo.ListarTodos()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": "Falha ao listar produtos"})
+		return
+	}
+
+	var response []ProdutoResponse
+	for _, p := range produtos {
+		response = append(response, NewProdutoResponse(p))
+	}
+
+	if response == nil {
+		response = []ProdutoResponse{}
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // @Description  Cria um produto no banco de dados com código, descrição e saldo inicial
